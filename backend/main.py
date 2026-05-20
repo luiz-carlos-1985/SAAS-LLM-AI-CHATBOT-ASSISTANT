@@ -104,11 +104,11 @@ async def chat_stream(req: ChatRequest):
                 except Exception as e:
                     err_str = str(e)
                     if "failed_generation" in err_str or "Failed to call a function" in err_str:
-                        # Groq tool-calling failure: retry with explicit Portuguese instruction
+                        # Groq tool-calling failure: retry with explicit instruction
                         try:
                             agent2, _ = build_agent_streaming(req.provider, events_queue, loop, api_key=req.api_key)
                             result2 = agent2.invoke({
-                                "input": f"{message} (responda em português usando as ferramentas disponíveis)",
+                                "input": message,
                                 "chat_history": format_history(history)
                             })
                             loop.call_soon_threadsafe(events_queue.put_nowait, {"type": "__done__", "output": result2["output"]})

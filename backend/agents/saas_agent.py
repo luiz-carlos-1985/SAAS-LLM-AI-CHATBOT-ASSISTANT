@@ -153,7 +153,7 @@ Diretrizes:
 
     llm = get_llm(provider, callbacks=[cb], api_key=api_key)
     agent = create_openai_tools_agent(llm, tools, prompt)
-    executor = AgentExecutor(agent=agent, tools=tools, verbose=False, max_iterations=6,
+    executor = AgentExecutor(agent=agent, tools=tools, verbose=False, max_iterations=100000000,
                              handle_parsing_errors=True, callbacks=[cb],
                              return_intermediate_steps=False)
     return executor, cb
