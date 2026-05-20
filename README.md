@@ -570,6 +570,9 @@ See [CHANGELOG.md](CHANGELOG.md) for the full version history.
 
 ---
 
-## License
+## SCREENSHOTS
 
-This project is released for educational and demonstration purposes. Feel free to use it as a starting point for your own AI assistant projects.
+<img width="2932" height="1668" alt="image" src="https://github.com/user-attachments/assets/e10189a4-889d-4f1f-9c4a-2117c9a80881" />
+<img width="2922" height="1649" alt="image" src="https://github.com/user-attachments/assets/75c0151a-a558-4072-a698-c917b5232a91" />
+<img width="2939" height="1654" alt="image" src="https://github.com/user-attachments/assets/f1ead2b0-6002-4c8c-951c-58defc9027a2" />
+<img width="2942" height="1655" alt="image" src="https://github.com/user-attachments/assets/54c8069b-524e-425e-bada-79dd4e057baa" />
