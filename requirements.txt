@@ -14,3 +14,7 @@ groq==0.13.0
 streamlit==1.45.1
 requests==2.32.4
 pypdf==6.7.5
+unstructured==0.16.23
+beautifulsoup4==4.13.4
+lxml==5.4.0
+python-multipart==0.0.20

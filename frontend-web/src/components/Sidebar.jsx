@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Settings, Database, Package, CheckCircle, Loader, Eye, EyeOff, Key } from 'lucide-react'
 import styles from './Sidebar.module.css'
+import KnowledgeManager from './KnowledgeManager'
 
 const API = 'http://localhost:8000'
 
@@ -127,6 +128,8 @@ export default function Sidebar({ provider, setProvider, apiKey, setApiKey, sess
           <p className={styles.hintError}>✗ Indexing failed. Check API key and connection</p>
         )}
       </div>
+
+      <KnowledgeManager provider={provider} apiKey={apiKey} />
 
       <div className={styles.section} style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div className={styles.sectionTitle}><Package size={13} /> Catalog</div>

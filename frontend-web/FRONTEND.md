@@ -30,6 +30,7 @@ npm run lint     # ESLint check
 ```
 App
 ├── Sidebar
+│   └── KnowledgeManager
 ├── ChatPanel
 └── AgentTrace
 ```
@@ -48,7 +49,8 @@ The single source of truth for the entire application. Manages:
 | `events` | `Array` | Agent trace events for the current turn (cleared on each new message) |
 | `isStreaming` | `boolean` | True while an SSE stream is open |
 | `sessionId` | `string\|null` | Current session UUID (set by backend on first message) |
-| `provider` | `string` | `"openai"` or `"groq"` |
+| `provider` | `string` | `"openai"` or `"groq"` — persisted in `localStorage` |
+| `apiKey` | `string` | API key override — persisted in `localStorage` |
 
 ### `sendMessage(text)`
 
@@ -74,19 +76,47 @@ Resets `sessionId`, `messages`, and `events` to their initial state.
 
 ### `indexDocs()`
 
-Calls `POST /index` with the current provider. Returns the response JSON (used by Sidebar to show success/error state).
+Calls `POST /index` with the current provider and `apiKey`. Returns the response JSON (used by Sidebar to show success/error state).
 
 ---
 
 ## `Sidebar` — `src/components/Sidebar.jsx`
 
-**Props:** `provider`, `setProvider`, `sessionId`, `onIndex`
+**Props:** `provider`, `setProvider`, `apiKey`, `setApiKey`, `sessionId`, `onIndex`, `providerChanged`
 
 On mount, fires two requests:
 - `GET /` → sets API status indicator (Online / Offline)
 - `GET /products` → populates the product catalog list
 
 **Index Documents button** has four visual states: `idle`, `loading` (spinner), `done` (green check), `error` (red message).
+
+**API Key field** — password input with show/hide toggle. Placeholder changes per provider (`sk-...` for OpenAI, `gsk_...` for Groq). Hint shows whether a key is active or falling back to server `.env`.
+
+---
+
+## `KnowledgeManager` — `src/components/KnowledgeManager.jsx`
+
+**Props:** `provider`, `apiKey`
+
+Collapsible panel embedded inside the Sidebar for adding knowledge sources at runtime via `POST /upload`.
+
+### Tabs
+
+| Tab | Input | Accepted formats |
+|-----|-------|------------------|
+| File | Drag & drop or click-to-browse | `.txt`, `.pdf`, `.md`, `.csv`, `.json` |
+| URL | Text input + Add button | Any public HTTP/HTTPS URL |
+| Text | Textarea + Add button | Any plain text |
+
+### Source list
+
+Each submitted source appears as a row with:
+- Type icon (📄 pdf, 📝 txt, 📋 md, 📊 csv, 🗂️ json, 🔗 url, 📝 text)
+- File/URL name (truncated)
+- Chunk count on success
+- Error message on failure
+- Status icon: spinner / green check / red alert
+- X button to remove from the visual list (does not delete from ChromaDB)
 
 ---
 

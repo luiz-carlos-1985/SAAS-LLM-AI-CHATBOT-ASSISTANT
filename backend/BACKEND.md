@@ -33,11 +33,13 @@ backend/
 | `message` | `str` | required | max 2000 chars | User's input message |
 | `session_id` | `str` | `None` | — | UUID to continue an existing conversation. Auto-generated if omitted |
 | `provider` | `str` | `"openai"` | `"openai"` or `"groq"` | LLM + embedding provider |
+| `api_key` | `str` | `None` | — | Optional key override — takes precedence over server `.env` |
 
 **`IndexRequest`**
 | Field | Type | Default | Constraints | Description |
 |-------|------|---------|-------------|-------------|
 | `provider` | `str` | `"openai"` | `"openai"` or `"groq"` | Embedding provider to use when building the vector store |
+| `api_key` | `str` | `None` | — | Optional key override |
 
 Both models expose a `validate_fields()` method that raises `HTTPException 422` on invalid input.
 
@@ -88,11 +90,11 @@ Builds and returns a configured `(AgentExecutor, StreamingEventCallback)` tuple 
 The agent uses `create_openai_tools_agent` (from `langchain_classic`) which relies on OpenAI-style function/tool calling. This works with both OpenAI and Groq models that support the tools API.
 
 **Agent configuration:**
-- `max_iterations=4` — prevents infinite loops
+- `max_iterations=100_000_000` — effectively unlimited
 - `handle_parsing_errors=True` — recovers from malformed tool call responses
 - `verbose=False` — suppresses stdout logging (events go through the callback instead)
 
-**System prompt (Sofia):** Friendly, empathetic assistant for SaaSFlow. Responds exclusively in Brazilian Portuguese. Never invents prices or features.
+**System prompt (Sofia):** Friendly, empathetic assistant for SaaSFlow. Responds in the same language as the user. Never invents prices or features. Answers off-topic questions directly without using tools.
 
 ### Tools
 
@@ -109,9 +111,33 @@ All four tools are defined as closures inside `build_agent_streaming` so they ha
 
 Converts the session history list (`[{"role": ..., "content": ...}]`) into LangChain `HumanMessage` / `AIMessage` objects for the `chat_history` prompt slot.
 
+### `POST /upload` — `multipart/form-data`
+
+Adds documents to the **existing** vector store without a full rebuild. Accepts any combination of:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `provider` | `string` | `"openai"` or `"groq"` |
+| `api_key` | `string` | Optional key override |
+| `files` | `File[]` | `.txt`, `.pdf`, `.md`, `.csv`, `.json` |
+| `url` | `string` | Web page to scrape and index |
+| `text` | `string` | Raw text to index directly |
+
+File handling per extension:
+- `.pdf` → `PyPDFLoader`
+- `.csv` → `CSVLoader`
+- `.md` → `UnstructuredMarkdownLoader` (falls back to `TextLoader` if `unstructured` not installed)
+- `.json` → serialized to text via `json.dumps`
+- `.txt` and others → `TextLoader`
+- URL → `WebBaseLoader` (requires `beautifulsoup4` + `lxml`)
+
 ---
 
 ## `rag/vectorstore.py`
+
+### `add_documents_to_store(path, provider, api_key, source_name, is_url, raw_text)`
+
+Adds documents from a single source to the existing ChromaDB. Called by `POST /upload` once per source item. If the store doesn't exist yet, creates it. Supports files, URLs, and raw text strings.
 
 ### `build_vectorstore(provider)`
 

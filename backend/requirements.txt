@@ -8,3 +8,9 @@ langchain-groq
 langchain-community
 chromadb
 sentence-transformers
+python-multipart
+pypdf
+python-docx
+docx2txt
+beautifulsoup4
+lxml

@@ -2,18 +2,18 @@ import os
 import uuid
 import json
 import asyncio
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 from datetime import datetime
 
 load_dotenv()
 
 from agents.saas_agent import build_agent_streaming, format_history
-from rag.vectorstore import build_vectorstore
+from rag.vectorstore import build_vectorstore, add_documents_to_store
 
 app = FastAPI(title="SaaSFlow Assistant API", version="1.0.0")
 
@@ -56,6 +56,21 @@ class IndexRequest(BaseModel):
             raise HTTPException(status_code=422, detail=f"Provedor inválido. Use: {', '.join(ALLOWED_PROVIDERS)}")
 
 
+def _detect_language(text: str) -> str:
+    """Returns a plain language name for use in prompts."""
+    sample = text.strip()[:200].lower()
+    pt_words = {'o','a','os','as','de','da','do','em','que','para','com','uma','um','não','por','se','na','no','ao','mais','como','mas','foi','ele','ela','são','tem','isso','este','esta','esse','essa','você','voce','eu','meu','minha'}
+    en_words = {'the','is','are','was','were','have','has','had','will','would','can','could','should','what','who','how','when','where','why','this','that','with','from','they','their','there','about','which','your','my','our'}
+    es_words = {'el','la','los','las','de','que','en','es','por','con','una','uno','para','como','pero','más','este','esta','ese','esa','yo','tú','él','ella','nosotros','ellos','tiene','son','está','están'}
+    pt = sum(1 for w in sample.split() if w in pt_words)
+    en = sum(1 for w in sample.split() if w in en_words)
+    es = sum(1 for w in sample.split() if w in es_words)
+    scores = {'English': en, 'Portuguese': pt, 'Spanish': es}
+    best = max(scores, key=scores.get)
+    return best if scores[best] > 0 else 'English'
+
+
+
 def sse_event(event_type: str, data: dict) -> str:
     payload = json.dumps({"type": event_type, "ts": datetime.utcnow().isoformat(), **data})
     return f"data: {payload}\n\n"
@@ -95,7 +110,8 @@ async def chat_stream(req: ChatRequest):
 
             def run_agent():
                 try:
-                    agent, event_cb = build_agent_streaming(req.provider, events_queue, loop, api_key=req.api_key)
+                    lang = _detect_language(message)
+                    agent, event_cb = build_agent_streaming(req.provider, events_queue, loop, api_key=req.api_key, reply_language=lang)
                     result = agent.invoke({
                         "input": message,
                         "chat_history": format_history(history)
@@ -177,6 +193,54 @@ def get_session(session_id: str):
 def clear_session(session_id: str):
     sessions.pop(session_id, None)
     return {"status": "cleared", "session_id": session_id}
+
+
+@app.post("/upload")
+async def upload_sources(
+    provider: str = Form("openai"),
+    api_key: Optional[str] = Form(None),
+    text: Optional[str] = Form(None),
+    url: Optional[str] = Form(None),
+    files: List[UploadFile] = File(default=[]),
+):
+    if provider not in ALLOWED_PROVIDERS:
+        raise HTTPException(status_code=422, detail=f"Provedor inválido. Use: {', '.join(ALLOWED_PROVIDERS)}")
+    try:
+        from rag.vectorstore import add_documents_to_store
+        import tempfile, shutil
+        added = []
+
+        # --- files ---
+        for f in files:
+            suffix = os.path.splitext(f.filename)[1].lower()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                shutil.copyfileobj(f.file, tmp)
+                tmp_path = tmp.name
+            try:
+                count = add_documents_to_store(tmp_path, provider, api_key=api_key, source_name=f.filename)
+                added.append({"type": "file", "name": f.filename, "chunks": count})
+            finally:
+                os.unlink(tmp_path)
+
+        # --- url ---
+        if url and url.strip():
+            count = add_documents_to_store(url.strip(), provider, api_key=api_key, source_name=url.strip(), is_url=True)
+            added.append({"type": "url", "name": url.strip(), "chunks": count})
+
+        # --- raw text ---
+        if text and text.strip():
+            count = add_documents_to_store(None, provider, api_key=api_key, source_name="text_input", raw_text=text.strip())
+            added.append({"type": "text", "name": "Text snippet", "chunks": count})
+
+        if not added:
+            raise HTTPException(status_code=422, detail="Nenhuma fonte fornecida")
+
+        return {"status": "success", "added": added}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}")
 
 
 @app.get("/products")

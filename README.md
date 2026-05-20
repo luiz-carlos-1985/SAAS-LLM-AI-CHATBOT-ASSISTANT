@@ -210,6 +210,7 @@ Both keys can coexist. The active provider is selected per-request via the `prov
 |--------|------|-------------|
 | `GET` | `/` | Health check |
 | `POST` | `/index` | Build or rebuild the ChromaDB vector store |
+| `POST` | `/upload` | Add documents from files, URLs, or raw text to the vector store |
 | `POST` | `/chat/stream` | Send a message; returns an SSE stream of agent events |
 | `GET` | `/session/{session_id}` | Retrieve conversation history for a session |
 | `DELETE` | `/session/{session_id}` | Clear a session's conversation history |
@@ -218,10 +219,34 @@ Both keys can coexist. The active provider is selected per-request via the `prov
 #### POST `/index`
 
 ```json
-{ "provider": "openai" }
+{ "provider": "openai", "api_key": "sk-..." }
 ```
 
 Loads `knowledge_base.txt` and `products.json`, splits them into chunks, generates embeddings, and persists the vector store to `backend/chroma_db/`. If the provider has changed since the last index, the old `chroma_db/` directory is automatically deleted before rebuilding to avoid embedding dimension mismatches.
+
+#### POST `/upload`
+
+Accepts `multipart/form-data` with any combination of:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `provider` | `string` | `"openai"` or `"groq"` (default: `"openai"`) |
+| `api_key` | `string` | Optional — overrides server `.env` |
+| `files` | `File[]` | One or more files: `.txt`, `.pdf`, `.md`, `.csv`, `.json` |
+| `url` | `string` | A web page URL to scrape and index |
+| `text` | `string` | Raw text to index directly |
+
+Adds chunks to the **existing** vector store without rebuilding it. Returns:
+
+```json
+{
+  "status": "success",
+  "added": [
+    { "type": "file", "name": "manual.pdf", "chunks": 12 },
+    { "type": "url",  "name": "https://...", "chunks": 5 }
+  ]
+}
+```
 
 #### POST `/chat/stream`
 
@@ -233,7 +258,7 @@ Loads `knowledge_base.txt` and `products.json`, splits them into chunks, generat
 }
 ```
 
-Constraints: `message` max 2000 characters; `provider` must be `"openai"` or `"groq"`.
+Constraints: `message` max 2000 characters; `provider` must be `"openai"` or `"groq"`. Optional `api_key` overrides the server `.env` key for that request.
 
 Returns `Content-Type: text/event-stream`. Each line is a JSON event (see [SSE Event Types](#sse-event-types)).  
 Session history is stored in-memory and capped at the last 20 messages.
@@ -332,9 +357,19 @@ Three-column dark-theme layout built with React 19 + Vite 8:
 #### Sidebar (`Sidebar.jsx`)
 - API health indicator (polls `GET /` on mount)
 - AI provider toggle: GPT-4o-mini ↔ Llama 3.3
+- API Key input with show/hide toggle — persisted in `localStorage`, falls back to server `.env` if empty
 - Active session ID display
 - "Index Documents" button with four states: idle, loading (spinner), done (green check), error (red message)
+- `KnowledgeManager` component embedded below the index button
 - Live product catalog fetched from `GET /products`
+
+#### Knowledge Manager (`KnowledgeManager.jsx`)
+Collapsible panel for adding knowledge sources at runtime without rebuilding the full index:
+- **File tab** — drag & drop or click-to-browse; accepts `.txt`, `.pdf`, `.md`, `.csv`, `.json`
+- **URL tab** — paste any web page URL to scrape and index
+- **Text tab** — paste raw text directly
+- Source list shows each added source with type icon, name, chunk count, and status (loading / done / error)
+- Each source can be removed from the visual list (does not remove from ChromaDB)
 
 #### Chat Panel (`ChatPanel.jsx`)
 - Conversation history with user/assistant bubbles
@@ -366,7 +401,8 @@ Manages all state and SSE communication:
 - Opens a `fetch` stream to `POST /chat/stream`
 - Reads the response body with `ReadableStream` + `TextDecoder`
 - Routes each parsed event to the correct state update
-- Exposes `sendMessage`, `stop`, `newSession`, `indexDocs`, `provider`, `setProvider`
+- Exposes `sendMessage`, `stop`, `newSession`, `indexDocs`, `provider`, `setProvider`, `apiKey`, `setApiKey`
+- `provider` and `apiKey` are persisted in `localStorage` (`sf_provider`, `sf_api_key`)
 - Uses `AbortController` to cancel in-flight requests
 
 ---
@@ -514,6 +550,9 @@ with httpx.stream("POST", "http://localhost:8000/chat/stream",
 | `API offline` shown in sidebar | Backend not running | Run `uvicorn main:app --reload --port 8000` in `backend/` |
 | `chromadb` import error | Missing dependency | `pip install -r requirements.txt` |
 | Empty responses from agent | Documents not indexed | Click "Index Documents" in the sidebar |
+| Upload fails with 422 | No source provided | Attach at least one file, URL, or text |
+| Upload fails with 500 | Missing `python-multipart` | `pip install -r requirements.txt` |
+| URL indexing returns empty | Page blocked or JS-rendered | Use a static/public URL; JS-heavy SPAs are not supported |
 | `AuthenticationError` from OpenAI | Missing or invalid key | Check `OPENAI_API_KEY` in `.env` |
 | `AuthenticationError` from Groq | Missing or invalid key | Check `GROQ_API_KEY` in `.env` |
 | SSE stream hangs after 60s | Agent timeout | Reduce prompt complexity or switch provider |
@@ -562,7 +601,16 @@ Areas where contributions are especially welcome:
 
 See [CHANGELOG.md](CHANGELOG.md) for the full version history.
 
-**Latest — v2.0.0**
+**Latest — v2.1.0**
+- `POST /upload` endpoint — add files, URLs, and raw text to the vector store at runtime
+- `KnowledgeManager` React component with drag & drop, URL input, and text input
+- API Key input in Sidebar — per-request key override, persisted in `localStorage`
+- Provider and API key now sent on every request (chat, index, upload)
+- Groq `failed_generation` error handling with automatic retry and LLM fallback
+- Agent responds in the user's language (removed hardcoded Portuguese)
+- `max_iterations` raised to 100,000,000
+
+**v2.0.0**
 - React 19 + Vite 8 frontend with 3-column dark-theme layout
 - Real-time SSE streaming replacing the synchronous `/chat` endpoint
 - `AgentTrace` observability panel with color-coded event cards and live counters

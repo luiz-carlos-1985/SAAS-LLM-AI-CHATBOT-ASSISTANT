@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.1.0] — Knowledge Manager + API Key UI
+
+### Added
+- `POST /upload` endpoint — accepts `multipart/form-data` with files (`.txt`, `.pdf`, `.md`, `.csv`, `.json`), URLs, and raw text; adds to existing ChromaDB without full rebuild
+- `add_documents_to_store()` in `vectorstore.py` — unified ingestion function supporting all source types
+- `KnowledgeManager` React component — collapsible panel with drag & drop file upload, URL input, and text input; live source list with chunk counts and status
+- API Key input in Sidebar — per-request key override persisted in `localStorage`; falls back to server `.env` if empty
+- New dependencies: `unstructured`, `beautifulsoup4`, `lxml`, `python-multipart`
+
+### Changed
+- `ChatRequest` and `IndexRequest` now accept optional `api_key` field
+- `get_llm`, `get_embeddings`, `build_vectorstore`, `get_retriever` all accept `api_key` parameter
+- Agent responds in the user's input language (removed hardcoded Portuguese instruction)
+- `max_iterations` raised to 100,000,000
+- Groq `failed_generation` errors trigger automatic retry then LLM-direct fallback
+- `useAgentStream` exposes `apiKey` / `setApiKey`; both `provider` and `apiKey` persisted in `localStorage`
+- `App.jsx` passes `apiKey` and `setApiKey` to `Sidebar`
+
+---
+
 ## [2.0.0] — React Frontend + Real-time Observability
 
 ### Added
