@@ -1,0 +1,90 @@
+[
+  {
+    "id": "p001",
+    "name": "Starter Plan",
+    "category": "plano",
+    "price": 49.90,
+    "description": "Plano inicial para pequenas equipes. Inclui até 5 usuários, 10GB de armazenamento, suporte por email e acesso a relatórios básicos.",
+    "features": ["5 usuários", "10GB storage", "Relatórios básicos", "Suporte email", "API REST"],
+    "tags": ["iniciante", "pequena empresa", "barato", "básico"],
+    "rating": 4.2,
+    "reviews": 320
+  },
+  {
+    "id": "p002",
+    "name": "Growth Plan",
+    "category": "plano",
+    "price": 149.90,
+    "description": "Plano para empresas em crescimento. Até 25 usuários, 100GB de armazenamento, suporte prioritário, relatórios avançados e integrações com CRM.",
+    "features": ["25 usuários", "100GB storage", "Relatórios avançados", "Suporte prioritário", "Integrações CRM", "Webhooks"],
+    "tags": ["crescimento", "média empresa", "integrações", "crm"],
+    "rating": 4.6,
+    "reviews": 210
+  },
+  {
+    "id": "p003",
+    "name": "Enterprise Plan",
+    "category": "plano",
+    "price": 499.90,
+    "description": "Plano corporativo com usuários ilimitados, armazenamento ilimitado, SLA 99.9%, suporte 24/7, SSO, auditoria completa e gerente de conta dedicado.",
+    "features": ["Usuários ilimitados", "Storage ilimitado", "SLA 99.9%", "Suporte 24/7", "SSO", "Auditoria", "Gerente dedicado"],
+    "tags": ["enterprise", "corporativo", "ilimitado", "sla", "segurança"],
+    "rating": 4.9,
+    "reviews": 95
+  },
+  {
+    "id": "p004",
+    "name": "Add-on: Analytics Pro",
+    "category": "addon",
+    "price": 29.90,
+    "description": "Módulo de analytics avançado com dashboards customizáveis, funis de conversão, cohort analysis e exportação para BI.",
+    "features": ["Dashboards customizáveis", "Funis de conversão", "Cohort analysis", "Export BI", "Alertas automáticos"],
+    "tags": ["analytics", "dados", "dashboard", "bi", "relatórios"],
+    "rating": 4.7,
+    "reviews": 180
+  },
+  {
+    "id": "p005",
+    "name": "Add-on: Automações",
+    "category": "addon",
+    "price": 39.90,
+    "description": "Motor de automações com triggers, workflows visuais, integração com Zapier e Make, e execução de scripts customizados.",
+    "features": ["Workflows visuais", "Triggers", "Zapier/Make", "Scripts customizados", "Logs de execução"],
+    "tags": ["automação", "workflow", "zapier", "produtividade"],
+    "rating": 4.5,
+    "reviews": 145
+  },
+  {
+    "id": "p006",
+    "name": "Add-on: Suporte Premium",
+    "category": "addon",
+    "price": 59.90,
+    "description": "Suporte premium com atendimento em até 1 hora, canal dedicado no Slack, sessões mensais de onboarding e treinamento da equipe.",
+    "features": ["Resposta em 1h", "Canal Slack dedicado", "Onboarding mensal", "Treinamento equipe", "Relatório mensal de uso"],
+    "tags": ["suporte", "premium", "slack", "onboarding", "treinamento"],
+    "rating": 4.8,
+    "reviews": 88
+  },
+  {
+    "id": "p007",
+    "name": "Add-on: Segurança Avançada",
+    "category": "addon",
+    "price": 49.90,
+    "description": "Camada extra de segurança com 2FA obrigatório, IP whitelist, criptografia de dados em repouso, LGPD compliance e relatórios de auditoria.",
+    "features": ["2FA obrigatório", "IP whitelist", "Criptografia", "LGPD compliance", "Auditoria detalhada"],
+    "tags": ["segurança", "lgpd", "compliance", "2fa", "criptografia"],
+    "rating": 4.6,
+    "reviews": 112
+  },
+  {
+    "id": "p008",
+    "name": "Consultoria de Implementação",
+    "category": "servico",
+    "price": 899.00,
+    "description": "Serviço único de implementação com arquiteto de soluções dedicado, migração de dados, configuração completa e 30 dias de acompanhamento.",
+    "features": ["Arquiteto dedicado", "Migração de dados", "Configuração completa", "30 dias suporte", "Documentação"],
+    "tags": ["consultoria", "implementação", "migração", "onboarding"],
+    "rating": 4.9,
+    "reviews": 54
+  }
+]
